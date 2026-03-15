@@ -28,6 +28,7 @@ dependency:
   requests>=2.31.0
   beautifulsoup4>=4.12.0
   ```
+- 仓库根目录的 `requirements.txt` 仅用于本地运行脚本，并与上方依赖声明保持一致；本Skill不依赖其他第三方包
 - 无需额外文件准备
 
 ## 操作步骤

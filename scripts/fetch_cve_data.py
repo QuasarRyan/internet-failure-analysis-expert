@@ -9,7 +9,6 @@ import sys
 import json
 import re
 import requests
-from datetime import datetime
 from bs4 import BeautifulSoup
 
 
