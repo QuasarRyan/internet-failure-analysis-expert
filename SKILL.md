@@ -5,6 +5,7 @@ dependency:
   python:
     - requests>=2.31.0
     - beautifulsoup4>=4.12.0
+    - jinja2>=3.1.0
 ---
 
 # 故障分析专家（CVE漏洞 & 互联网故障）
@@ -27,8 +28,9 @@ dependency:
   ```
   requests>=2.31.0
   beautifulsoup4>=4.12.0
+  jinja2>=3.1.0
   ```
-- 仓库根目录的 `requirements.txt` 仅用于本地运行脚本，并与上方依赖声明保持一致；本Skill不依赖其他第三方包
+- 仓库根目录的 `requirements.txt` 仅用于本地运行脚本，并与上方依赖声明保持一致；本Skill不依赖其他第三方包（Step 6 报告生成依赖 jinja2）
 - 无需额外文件准备
 
 ## 操作步骤
@@ -213,6 +215,114 @@ dependency:
   用途：从任意URL提取网页文本内容
   参数：url - 目标网页URL
   适用场景：互联网故障描述输入模式
+
+- 报告生成脚本：见 [scripts/generate_report.py](scripts/generate_report.py)
+  用途：将结构化分析结果渲染为 Markdown 报告
+  参数：json_path - 结构化分析结果 JSON 文件路径，output_path - 可选输出路径
+  适用场景：Steps 2-5 完成结构化输出后，生成最终报告
+
+---
+
+## 结构化输出Pipeline（代码化报告生成）
+
+本 Skill 支持将报告生成步骤自动化。AI 完成分析后，由 `generate_report.py` 渲染最终报告。
+
+### Pipeline 流程
+
+```
+用户输入
+  │
+  ▼
+Step 1: fetch_cve_data.py / extract_webpage.py  →  原始数据（JSON / 文本）
+  │
+  ▼
+Steps 2-5: AI 分析  →  结构化 JSON  ← 【必须输出此格式】
+  │
+  ▼
+generate_report.py  →  Markdown 报告
+```
+
+### 结构化 JSON 输出格式
+
+Steps 2-5 完成后，AI 应将分析结果整理为以下 JSON 结构：
+
+```json
+{
+  "mode": "cve | general",
+  "cve_id": "CVE-xxxx-xxxx（仅CVE模式）",
+
+  "basic_info": {
+    "incident_name": "故障名称",
+    "incident_id": "CVE编号或事件ID",
+    "start_time": "ISO8601或自然语言时间",
+    "end_time": "ISO8601或自然语言时间",
+    "duration": "如：6小时",
+    "impact_scope": "影响范围描述",
+    "severity": "critical | high | medium | low",
+    "cvss_score": 10.0,
+    "cvss_severity": "CRITICAL",
+    "cvss_vector": "CVSS:3.1/...",
+    "cwe_id": "CWE-xxx",
+    "cwe_name": "漏洞类型名称",
+    "vendors": ["厂商1", "厂商2"],
+    "affected_products": ["产品1", "产品2"]
+  },
+
+  "sources": [
+    {"url": "https://...", "source_type": "Vendor Advisory", "title": "标题", "collected_via": "NVD API | 网页抓取"}
+  ],
+
+  "executive_summary": "（§1 执行摘要，AI 推理生成）",
+
+  "official_summary": "（§4 官方报告概要，AI 阅读原文后生成）",
+
+  "timeline": [
+    {"timestamp": "时间", "event": "事件", "impact": "影响", "response_action": "响应行动"}
+  ],
+
+  "triggers": {
+    "trigger_condition": "触发条件",
+    "trigger_path": "触发路径",
+    "cascade_path": ["第一步", "第二步", "第三步"],
+    "amplification_factors": ["因子1", "因子2"]
+  },
+
+  "root_causes": {
+    "direct_cause": "直接原因",
+    "root_cause": "根本原因",
+    "human_factors": ["人员因素1", "人员因素2"],
+    "organizational_factors": ["组织因素1", "组织因素2"]
+  },
+
+  "recommendations": [
+    {
+      "priority": "P0 | P1 | P2",
+      "category": "technical | management",
+      "description": "建议描述",
+      "expected_effect": "预期效果",
+      "difficulty": "低 | 中 | 高"
+    }
+  ],
+
+  "references": [
+    {"url": "https://...", "source_type": "官方博客", "title": "标题"}
+  ]
+}
+```
+
+### 使用方式
+
+AI 完成分析后：
+1. 将结构化结果保存为 `analysis_result.json`
+2. 调用 `python scripts/generate_report.py analysis_result.json`
+3. 或直接在 Prompt 中让 AI 将 JSON 传给 `generate_report.py` 渲染
+
+### 注意事项
+
+- `executive_summary`（§1）和 `official_summary`（§4）必须由 AI 推理生成，不可省略
+- `basic_info`、`timeline`、`triggers`、`root_causes`、`recommendations` 必须为结构化字段，**不得**使用自然语言段落
+- 报告模板见 [templates/report.md.j2](templates/report.md.j2)
+- 数据模型定义见 [scripts/schema.py](scripts/schema.py)
 
 ## 注意事项
 - **官方故障报告是最重要的参考资料**，所有技术分析应基于官方报告提供的信息

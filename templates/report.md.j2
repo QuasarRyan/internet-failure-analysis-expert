@@ -1,0 +1,176 @@
+# {{ basic_info.incident_name }} 故障分析报告
+
+{% if basic_info.incident_id %}
+> **编号**: {{ basic_info.incident_id }}
+{% endif %}
+> **分析模式**: {{ "CVE 漏洞分析" if mode == "cve" else "互联网故障分析" }}
+> **生成时间**: {{ generated_date }}
+
+---
+
+## 1. 执行摘要
+
+{{ executive_summary | default("（由 AI 基于分析结果自动生成）") }}
+
+---
+
+## 2. 故障基本信息
+
+| 字段 | 内容 |
+|------|------|
+{% if basic_info.incident_id %} | 故障名称/编号 | {{ basic_info.incident_name }} ({{ basic_info.incident_id }}) | {% else %} | 故障名称 | {{ basic_info.incident_name }} | {% endif %}
+{% if basic_info.start_time %} | 开始时间 | {{ basic_info.start_time }} | {% endif %}
+{% if basic_info.end_time %} | 恢复时间 | {{ basic_info.end_time }} | {% endif %}
+{% if basic_info.duration %} | 持续时长 | {{ basic_info.duration }} | {% endif %}
+{% if basic_info.impact_scope %} | 影响范围 | {{ basic_info.impact_scope }} | {% endif %}
+| 严重等级 | {{ basic_info.severity.value }} |
+{% if basic_info.status %} | 当前状态 | {{ basic_info.status }} | {% endif %}
+{% if mode == "cve" %}
+{% if basic_info.cvss_score %}
+| CVSS 评分 | {{ basic_info.cvss_score }} ({{ basic_info.cvss_severity }}) |
+{% endif %}
+{% if basic_info.cvss_vector %}
+| CVSS 向量 | `{{ basic_info.cvss_vector }}` |
+{% endif %}
+{% if basic_info.cwe_id %}
+| 漏洞类型 | {{ basic_info.cwe_id }} — {{ basic_info.cwe_name }} |
+{% endif %}
+{% if basic_info.vendors %}
+| 受影响厂商 | {{ basic_info.vendors | join("、") }} |
+{% endif %}
+{% if basic_info.affected_products %}
+| 受影响产品 | {{ basic_info.affected_products | join("、") }} |
+{% endif %}
+{% endif %}
+
+---
+
+## 3. 信息来源说明
+
+- **分析模式**: {{ "CVE 漏洞模式 — 数据来源：NVD（美国国家漏洞数据库）API v2.0" if mode == "cve" else "通用故障模式 — 数据来源：搜索引擎定位 + 官方报告网页抓取" }}
+{% if sources %}
+- **采集的官方报告**:
+
+{% for source in sources %}
+  - [{{ source.title or source.url }}]({{ source.url }})（来源：{{ source.source_type }}，获取方式：{{ source.collected_via }}）
+{% endfor %}
+{% endif %}
+
+---
+
+## 4. 官方故障报告概要
+
+{{ official_summary | default("（由 AI 阅读官方公告原文后生成关键摘要）") }}
+
+---
+
+## 5. 时间线分析
+
+{% if timeline %}
+| 时间 | 事件 | 影响 | 响应行动 |
+|------|------|------|----------|
+{% for event in timeline %}
+| {{ event.timestamp }} | {{ event.event }} | {{ event.impact }} | {{ event.response_action }} |
+{% endfor %}
+{% else %}
+> 暂无时间线数据。
+{% endif %}
+
+---
+
+## 6. 导火索与故障链分析
+
+### 导火索
+
+{{ triggers.trigger_condition if triggers.trigger_condition else "（待补充）" }}
+
+**触发路径**: {{ triggers.trigger_path if triggers.trigger_path else "（待分析）" }}
+
+### 级联故障路径
+
+{% if triggers.cascade_path %}
+{% for step in triggers.cascade_path %}
+{{ loop.index }}. {{ step }}
+{% endfor %}
+{% else %}
+> 暂无级联路径数据。
+{% endif %}
+
+### 放大因子
+
+{% if triggers.amplification_factors %}
+{% for factor in triggers.amplification_factors %}
+- {{ factor }}
+{% endfor %}
+{% else %}
+> 暂无放大因子数据。
+{% endif %}
+
+---
+
+## 7. 根本原因分析
+
+### 直接原因
+
+{{ root_causes.direct_cause if root_causes.direct_cause else "（待分析）" }}
+
+### 根本原因
+
+{{ root_causes.root_cause if root_causes.root_cause else "（待分析）" }}
+
+### 人员因素
+
+{% if root_causes.human_factors %}
+{% for factor in root_causes.human_factors %}
+- {{ factor }}
+{% endfor %}
+{% else %}
+> 暂无人员因素数据。
+{% endif %}
+
+### 组织架构因素
+
+{% if root_causes.organizational_factors %}
+{% for factor in root_causes.organizational_factors %}
+- {{ factor }}
+{% endfor %}
+{% else %}
+> 暂无组织架构因素数据。
+{% endif %}
+
+---
+
+## 8. 改进建议
+
+{% if recommendations %}
+### 按优先级排序
+
+{% for rec in recommendations | sort(attribute='priority.value') %}
+#### {{ rec.priority.value }} — {{ "技术" if rec.category.value == "technical" else "管理" }}层面
+**{{ rec.description }}**
+
+- 预期效果：{{ rec.expected_effect if rec.expected_effect else "待评估" }}
+- 实施难度：{{ rec.difficulty if rec.difficulty else "待评估" }}
+
+---
+{% endfor %}
+{% else %}
+> 暂无改进建议数据。
+{% endif %}
+
+---
+
+## 9. 参考资料
+
+{% if references %}
+{% for ref in references %}
+- [{{ ref.title or ref.url }}]({{ ref.url }})（来源：{{ ref.source_type }}）
+{% endfor %}
+{% else %}
+> 暂无参考资料。
+{% endif %}
+
+---
+
+*本报告由故障分析专家 Skill（internet-failure-analysis-expert）自动生成。*
+*§1 执行摘要、§4 官方报告概要 由 AI 推理生成；§2-§3、§5-§9 由结构化数据模板自动渲染。*
