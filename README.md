@@ -8,9 +8,10 @@ This skill only depends on:
 ```txt
 requests>=2.31.0
 beautifulsoup4>=4.12.0
+jinja2>=3.1.0
 ```
 
-`requirements.txt` is intentionally kept identical to the dependency block in `SKILL.md` and is only used when running the helper scripts locally. No additional third-party packages are required by this repository.
+`requirements.txt` is intentionally kept identical to the dependency block in `SKILL.md` and is only used when running the helper scripts locally. The `jinja2` dependency is required by `generate_report.py` for Step 6 automated report rendering.
 
 ---
 
